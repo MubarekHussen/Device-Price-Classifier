@@ -2,14 +2,11 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from joblib import load
 
-# Load the trained model
 clf = load('random_forest.joblib')
 
-# Define the FastAPI app
 app = FastAPI()
 
 
-# Define a Pydantic model for the device specifications
 class Device(BaseModel):
     battery_power: int
     blue: int
@@ -35,6 +32,5 @@ class Device(BaseModel):
 
 @app.post("/predict/{deviceId}")
 async def predict(deviceId: int, device: Device):
-    # Make a prediction
     prediction = clf.predict([list(device.dict().values())])
     return {"deviceId": deviceId, "predicted_price_range": int(prediction[0])}
