@@ -45,6 +45,11 @@
 		    <groupId>com.mysql</groupId>
 		    <artifactId>mysql-connector-j</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.Blackcoffer</groupId>
+			<artifactId>DataVisualization</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 
 	<build>
