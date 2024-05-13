@@ -1,36 +1,68 @@
+import logging
+import pandas as pd
+from joblib import load
 from fastapi import FastAPI
 from pydantic import BaseModel
-from joblib import load
+import re
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+class Device(BaseModel):
+    """
+    Pydantic model for device data.
+    """
+    batteryPower: int
+    blue: int
+    clockSpeed: float
+    dualSim: int
+    fc: int
+    fourG: int
+    intMemory: int
+    mDep: float
+    mobileWt: int
+    nCores: int
+    pc: int
+    pxHeight: int
+    pxWidth: int
+    ram: int
+    scH: int
+    scW: int
+    talkTime: int
+    threeG: int
+    touchScreen: int
+    wifi: int
+
 
 clf = load('random_forest.joblib')
 
 app = FastAPI()
 
 
-class Device(BaseModel):
-    battery_power: int
-    blue: int
-    clock_speed: float
-    dual_sim: int
-    fc: int
-    four_g: int
-    int_memory: int
-    m_dep: float
-    mobile_wt: int
-    n_cores: int
-    pc: int
-    px_height: int
-    px_width: int
-    ram: int
-    sc_h: int
-    sc_w: int
-    talk_time: int
-    three_g: int
-    touch_screen: int
-    wifi: int
-
-
 @app.post("/predict/{deviceId}")
 async def predict(deviceId: int, device: Device):
-    prediction = clf.predict([list(device.dict().values())])
+    """
+    Endpoint for predicting the price range of a device.
+    
+    Args:
+        deviceId (int): The ID of the device.
+        device (Device): The device data.
+    
+    Returns:
+        dict: The device ID and predicted price range.
+    """
+    logger.info("Received prediction request for device ID %s: %s", deviceId, device)
+    
+    device_data = pd.DataFrame([device.model_dump()])
+    
+    device_data.columns = [re.sub(r'(?<!^)(?=[A-Z])', '_', col).lower() for col in device_data.columns]
+    
+    prediction = clf.predict(device_data)
+    
+    logger.info("Predicted price range for device ID %s: %s", deviceId, int(prediction[0]))
     return {"deviceId": deviceId, "predicted_price_range": int(prediction[0])}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

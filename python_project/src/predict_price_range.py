@@ -1,44 +1,78 @@
+import os
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 from joblib import dump
-import os
-
-print(os.getcwd())
 
 os.chdir(f'{os.getcwd()}/python_project/src')
-print(os.getcwd())
 
-train_data = pd.read_csv("../data/cleaned_train.csv")
-test_data = pd.read_csv("../data/test.csv")
 
-X = train_data.drop('price_range', axis=1)
-y = train_data['price_range']
+def load_data():
+    """
+    Load training and testing data from CSV files.
+    
+    Returns:
+        train_data (DataFrame): Training data.
+        test_data (DataFrame): Testing data.
+    """
+    train_data = pd.read_csv("../data/cleaned_train.csv")
+    test_data = pd.read_csv("../data/test.csv")
+    return train_data, test_data
 
-X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
 
-clf = RandomForestClassifier(n_estimators=100, random_state=42)
+def train_model(train_data):
+    """
+    Train a Random Forest Classifier on the training data.
+    
+    Args:
+        train_data (DataFrame): Training data.
+    
+    Returns:
+        clf (RandomForestClassifier): Trained classifier.
+        X_val (DataFrame): Validation features.
+        y_val (Series): Validation labels.
+    """
+    X = train_data.drop('price_range', axis=1)
+    y = train_data['price_range']
 
-clf.fit(X_train, y_train)
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
 
-dump(clf, 'random_forest.joblib')
+    clf = RandomForestClassifier(n_estimators=100, random_state=42)
 
-val_predictions = clf.predict(X_val)
+    clf.fit(X_train, y_train)
 
-print(f"Accuracy: {accuracy_score(y_val, val_predictions)}")
+    dump(clf, 'random_forest.joblib')
 
-print(confusion_matrix(y_val, val_predictions))
+    return clf, X_val, y_val
 
-print(classification_report(y_val, val_predictions))
 
-test_id = test_data['id']
-X_test = test_data.drop('id', axis=1)
+def evaluate_model(clf, X_val, y_val):
+    """
+    Evaluate the classifier on the validation data.
+    
+    Args:
+        clf (RandomForestClassifier): Trained classifier.
+        X_val (DataFrame): Validation features.
+        y_val (Series): Validation labels.
+    """
+    val_predictions = clf.predict(X_val)
 
-X_test_subset = X_test[:10]
-test_id_subset = test_id[:10]
+    print(f"Accuracy: {accuracy_score(y_val, val_predictions)}")
 
-predictions = clf.predict(X_test_subset)
+    print(confusion_matrix(y_val, val_predictions))
 
-for id, prediction in zip(test_id_subset, predictions):
-    print(f"Device ID: {id}, Predicted Price Range: {prediction}")
+    print(classification_report(y_val, val_predictions))
+
+
+def main():
+    """
+    Main function to load data, train model, and evaluate it.
+    """
+    train_data, test_data = load_data()
+    clf, X_val, y_val = train_model(train_data)
+    evaluate_model(clf, X_val, y_val)
+
+
+if __name__ == "__main__":
+    main()
